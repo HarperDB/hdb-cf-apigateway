@@ -1,0 +1,7 @@
+{
+  "name": "hdb-cf-apigateway",
+  "version": "1.0.0",
+  "description": "an api caching gateway for harperdb custom functions",
+  "author": "jaxon@harperdb.io",
+  "dependencies": {}
+}
