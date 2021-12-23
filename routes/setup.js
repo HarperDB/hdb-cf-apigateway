@@ -9,7 +9,7 @@ module.exports = async (server, { hdbCore, logger }) => {
 
       request.body = {
         operation: 'create_schema',
-        schema: 'edison_poc'
+        schema: 'api_gateway'
       }
 
       try {
@@ -20,7 +20,7 @@ module.exports = async (server, { hdbCore, logger }) => {
 
       request.body = {
         operation: 'create_table',
-        schema: 'edison_poc',
+        schema: 'api_gateway',
         table: 'request_cache',
         hash_attribute: 'id'
       }

@@ -5,7 +5,7 @@ const incrementCacheHits = ({ hdbCore, id, hits }) => {
     const hitRequest = {
       body: {
         operation: 'update',
-        schema: 'edison_poc',
+        schema: 'api_gateway',
         table: 'request_cache',
         hdb_user: { role:{ permission:{ super_user:true } }, username: 'hdbadmin' },
         records: [{ id, hits: hits + 1 }]

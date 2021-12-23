@@ -5,7 +5,7 @@ const makeCacheRequest = async ({ hdbCore, url, method, minCreatedDate }) => {
     const cacheRequest = {
       body: {
         operation: 'search_by_conditions',
-        schema: 'edison_poc',
+        schema: 'api_gateway',
         table: 'request_cache',
         operator: 'and',
         get_attributes: ['id', 'hits', 'response', 'content_type'],
