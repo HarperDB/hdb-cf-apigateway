@@ -1,162 +1,45 @@
-# HarperDB Custom Functions Template
+# HarperDB Custom Functions API RELAY
 
- This repo comprises a set of Fastify routes, helpers, and static content to be loaded by HarperDB's Custom Functions Fastify Server.
+ This repo will relay any API request through a HarperDB Custom Functions endpoint, return a cached version if it has one, or make the API call, store, and return the result if it doesn't.
 
-To deploy this template, simply clone this repo into your `custom_functions` folder. By default, this folder is located in your HarperDB user folder `(~/hdb)`.
-
-**Routes are automatically prefixed with their parent folder name.**
-
-## Routes
 
 ---
 
-### GET /
 
-NO preValidation AND USING hdbCore.requestWithoutAuthentication
-BYPASSES ALL CHECKS: DO NOT USE RAW USER-SUBMITTED VALUES IN SQL STATEMENTS
 
-```
-  server.route({
-    url: '/',
-    method: 'GET',
-    handler: (request) => {
-      request.body= {
-        operation: 'sql',
-        sql: 'SELECT * FROM dev.dogs ORDER BY dog_name'
-      };
-      return hdbCore.requestWithoutAuthentication(request);
-    }
-  })
-```
+## Install
 
-### POST /
+To include this project in your custom functions, clone it into your custom_functions folder:
 
-STANDARD PASS-THROUGH BODY, PAYLOAD AND HDB AUTHENTICATION
+`git clone https://github.com/HarperDB/hdb-cf-apigateway.git [PATH_TO_YOUR_HDB_FOLDER]/api-gateway`
 
-```
-server.route({
-    url: '/',
-    method: 'POST',
-    preValidation: hdbCore.preValidation,
-    handler: hdbCore.request,
-  })
-```
+## Configure
+Next, configure your API Relay's behavior at the top of `[PATH_TO_YOUR_HDB_FOLDER]/api-gateway/helpers/handleRequest.js`. Defaults are listed below:
 
-### GET /:id
+- MAX_AGE_SECONDS = 60
+- METHODS_TO_CACHE = `["GET"]`
 
-WITH ASYNC THIRD-PARTY AUTH PREVALIDATION
+**After configuring your API Relay, be sure to restart your custom function server so the settign take effect.** You can do this using the `restart_service` operation, or using the `Restart Server` button in the Custom Functions section of [HarperDB Studio](https://studio.harperdb.io).
 
-```
-  server.route({
-    url: '/:id',
-    method: 'GET',
-    preValidation: (request) => customValidation(request, logger),
-    handler: (request) => {
-      request.body= {
-        operation: 'sql',
-        sql: `SELECT * FROM dev.dog WHERE id = ${request.params.id}`
-      };
+## Setup
 
-      /*
-       * requestWithoutAuthentication bypasses the standard HarperDB authentication.
-       * YOU MUST ADD YOUR OWN preValidation method above, or this method will be available to anyone.
-       */
-      return hdbCore.requestWithoutAuthentication(request);
-    }
-  });
-```
+Execute a GET request against `[MY_HDB_CF_SERVER_URL]/api-relay/setup` using Postman, or by just pasting that URL into a browser. This creates a schema and table in your HarperDB instance in which to store your cached replies, if they don't already exist.
 
-## Helpers
+## Implement
 
----
-THE ASYNCRONOUS THIRD PARTY VALIDATION, FROM helpers/example.js:
+Finally, modify your application's API calls to hit your HarperDB Api Relay by prepending the API Relay URL to your API URL:
 
-```
-const customValidation = async (request,logger) => {
-  const options = {
-    hostname: 'jsonplaceholder.typicode.com',
-    port: 443,
-    path: '/todos/1',
-    method: 'GET',
-    headers: { authorization: request.headers.authorization },
-  };
+- Old: https://my-api.com/v1/my-endpoint?user=12345
+- New: [MY_HDB_CF_SERVER_URL]/api-relay/url?https://my-api.com/v1/my-endpoint?user=12345
 
-  const result = await authRequest(options);
 
-  /*
-   *  throw an authentication error based on the response body or statusCode
-   */
-  if (result.error) {
-    const errorString = result.error || 'Sorry, there was an error authenticating your request';
-    logger.error(errorString);
-    throw new Error(errorString);
-  }
-  return request;
-};
-
-module.exports = customValidation;
-```
-
-THE ACTUAL HTTP CALL USED IN authRequest, also in helpers/example.js:
-
-```
-const authRequest = (options) => {
-  return new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
-      res.setEncoding('utf8');
-      let responseBody = '';
-
-      res.on('data', (chunk) => {
-        responseBody += chunk;
-      });
-
-      res.on('end', () => {
-        resolve(JSON.parse(responseBody));
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(err);
-    });
-
-    req.end();
-  });
-};
-```
-
-## Static Files (Web UI)
 
 ---
 
-By adding a `/static` folder to your project, you can also host static files. You might, for example, create a dashboard that displays summary data based on standard HarperDB operations or Custom Functions that pull data from HarperDB.
 
-- **Your static folder MUST contain an `index.html` file**
-- **You must use absolute paths for assets (start with a slash)**
+## @TODO
 
----
-
-INDEX.HTML
-
-```
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <link rel="icon" href="/resources/img/favicon.png" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HarperDB Custom Functions Static Template</title>
-  <link href="/resources/css/style.css" rel="stylesheet">
-</head>
-<body>
-  <div id="app">
-    <div id="app-content">
-      <img width="64" height="64" src="/resources/img/logo.png" /><br /><br />
-      <b>HarperDB Custom Functions Static Template</b><br /><br />
-      Edit or replace this file to create and host your own custom UI.
-    </div>
-    <div id="app-bg-color" />
-    <div id="app-bg-dots" />
-  </div>
-</body>
-</html>
-```
+- Implement a `config filter` to evaluate inbound requests and only allow certain domains or URLs (via Regex) to be relayed.
+- Create a `preRequest` handler logic which will modify the inbound request before sending it to the origin API
+- Create a `postRequest` handler that will modify the data returned from the API before storing and returning it to the original requestor
+- Implement a `Admin UI` to track performance of the origin API endpoints, view cache stats, and manage the configuration details for the app

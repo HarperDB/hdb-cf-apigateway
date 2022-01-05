@@ -8,16 +8,21 @@ const callAPI = require('./callAPI');
 const saveResultToCache = require('./saveResultToCache');
 
 const MAX_AGE_SECONDS = 60;
+const METHODS_TO_CACHE = ['GET'];
 
 const handleRequest = async ({ hdbCore, request, reply, logger}) => {
   const url = urlParser(request.req.url.substr(request.req.url.indexOf('?')).replace('?', ''));
   const method = request.method;
   const start = Date.now();
   const minCreatedDate = start - (MAX_AGE_SECONDS * 1000);
+  const shouldCache = METHODS_TO_CACHE.includes(method);
+  let cacheResult = false;
 
-  const cacheResult = await makeCacheRequest({ hdbCore, url, method, minCreatedDate });
+  if (shouldCache) {
+    cacheResult = await makeCacheRequest({ hdbCore, url, method, minCreatedDate });
+  }
 
-  if (cacheResult.length) {
+  if (cacheResult?.length) {
     reply.header('hdb-from-cache', true);
 
     const { id, hits, response, content_type } = cacheResult[0];
@@ -35,7 +40,9 @@ const handleRequest = async ({ hdbCore, request, reply, logger}) => {
 
       reply.header('content-type', content_type);
 
-      await saveResultToCache({ hdbCore, href: url.href, response, method, error: status < 200 || status > 299, status, content_type, duration_ms: Date.now() - start });
+      if (shouldCache) {
+        await saveResultToCache({ hdbCore, href: url.href, response, method, error: status < 200 || status > 299, status, content_type, duration_ms: Date.now() - start });
+      }
 
       return response;
     } catch (error) {
