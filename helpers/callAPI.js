@@ -29,6 +29,7 @@ const callAPI = ({ request, url }) => {
       path: url.path,
       method: request.method,
       agent: url.protocol === 'http:' ? httpAgent : httpsAgent,
+      headers: request.headers,
     };
 
     const req = (options.protocol === 'https:' ? https : http).request(options, callback);
