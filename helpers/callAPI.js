@@ -3,7 +3,7 @@
 const https = require('https');
 const http = require('http');
 
-const httpAgent = new http.Agent({ rejectUnauthorized: false });
+const httpAgent = new http.Agent();
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const callAPI = ({ request, url }) => {
