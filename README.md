@@ -19,7 +19,7 @@ Next, configure your API Relay's behavior at the top of `[PATH_TO_YOUR_HDB_FOLDE
 - MAX_AGE_SECONDS = 60
 - METHODS_TO_CACHE = `["GET"]`
 
-**After configuring your API Relay, be sure to restart your custom function server so the settign take effect.** You can do this using the `restart_service` operation, or using the `Restart Server` button in the Custom Functions section of [HarperDB Studio](https://studio.harperdb.io).
+**After configuring your API Relay, be sure to restart your custom function server so the settings take effect.** You can do this using the `restart_service` operation, or using the `Restart Server` button in the Custom Functions section of [HarperDB Studio](https://studio.harperdb.io).
 
 ## Setup
 
